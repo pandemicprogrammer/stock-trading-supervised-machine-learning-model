@@ -4,9 +4,17 @@ from sklearn import metrics
 import numpy as np
 from datetime import datetime
 import pandas as pd
+import alpaca_trade_api as tradeapi
+import matplotlib.pyplot as plt
+
+# Initialize Alpaca API
+api = tradeapi.REST('PKDO0DUXPYPM7URFX3XJ', 'NA9Z45R3aeb7ptOinnz0i9VHfZiJAGWV6CFubiX4', base_url='https://paper-api.alpaca.markets')
 
 # List of ticker symbols
 tickers = ['AAPL', 'MSFT', 'AMZN', 'GOOGL', 'META', 'BRK-B', 'TSLA', 'V', 'JNJ', 'WMT', 'PG', 'NVDA', 'HD', 'MA', 'DIS', 'ADBE', 'NFLX', 'PYPL', 'KO', 'INTC', 'BUD']
+
+# List to store tickers that meet the criteria
+good_tickers = []
 
 for ticker in tickers:
 
@@ -40,7 +48,32 @@ for ticker in tickers:
 
     # Print the mean squared error of the predictions and the predicted price
     print(f'Ticker: {ticker}, Mean Squared Error: {metrics.mean_squared_error(y_test, y_pred)}, Last Close Price: {last_close_price}, Predicted Price for Next Day: {predicted_price[0]}')
-    
+
     # Append the ticker, prediction, last close price, and current date to the file
     with open("data/2020-onward-predictions.txt", "a") as file:
         file.write(f'Ticker: {ticker}, Date: {datetime.now().strftime("%Y-%m-%d")}, Last Close Price: {last_close_price}, Predicted Price for Next Day: {predicted_price[0]}\n')
+
+    # Check if the MSE is under 100 and predicted price is at least 10% less than the closing price
+    mse = metrics.mean_squared_error(y_test, y_pred)
+    
+    if mse < 100 and predicted_price < (0.9 * last_close_price):
+        good_tickers.append(ticker)    
+        
+        if mse < 500 and predicted_price < (0.9 * last_close_price):
+            # Submit a market order to buy 1 share of the stock
+            order = api.submit_order(
+                symbol=ticker,
+                qty=1,
+                side='buy',
+                type='market',
+                time_in_force='gtc'
+            )
+            print(f"Submitted an order to buy 1 share of {ticker} at market price. Order ID: {order.id}")
+
+# Visualize the good tickers
+plt.figure(figsize=(10,5))
+plt.bar(range(len(good_tickers)), [1]*len(good_tickers), tick_label=good_tickers)
+plt.title('Tickers with MSE < 100 and Predicted Price 10% less than Last Close')
+plt.xlabel('Ticker')
+plt.ylabel('Frequency')
+plt.show()
