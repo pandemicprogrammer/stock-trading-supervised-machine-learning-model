@@ -57,5 +57,3 @@ Data Preparation: Collect historical price data using the Alpaca API or another 
 Model Training: Train a linear regression model on the training data. This involves fitting the model to the input features and the target variable (the price).
 
 Model Evaluation: Evaluate the model's performance on the testing data. This involves using the model to predict the prices in the testing data and comparing these predictions to the actual prices.
-
-Prediction: Use the model to predict future prices.
